@@ -1,7 +1,6 @@
-GT Creative Studio: The Auto-Creative Engine
+🚀 GT Creative Studio: The Auto-Creative Engine
 
 An enterprise-grade multimodal pipeline that ingests raw brand assets and autonomously synthesizes high-fidelity ad campaigns in a min .
-
 1. The Problem
 
 Context: In the AdTech ecosystem, "Creative Fatigue" is the #1 killer of campaign performance. Marketing teams spend 80% of their time manually resizing images and tweaking copy for A/B tests, leaving little room for strategy.
@@ -63,6 +62,16 @@ Frontend: Streamlit (Custom CSS Design System)
 Data Structure: JSON (Strict Schema Enforcement)
 
 Asset Handling: Pillow (Image Processing) & Requests (Async Fetching)
+
+Final Flow :
+
+1. Upload Product + Logo
+2. AI identifies materials, style, brand DNA
+3. LLM generates creative angles (JSON)
+4. SD generates 10+ visuals
+5. ZIP file created instantly
+6. User downloads production-ready assets
+
 
 5. Challenges & Learnings
 
