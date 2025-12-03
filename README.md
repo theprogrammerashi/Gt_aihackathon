@@ -1,8 +1,8 @@
 GT Creative Studio: The Auto-Creative Engine
 
-Tagline: An enterprise-grade multimodal pipeline that ingests raw brand assets and autonomously synthesizes high-fidelity ad campaigns (Copy + Imagery) in under 60 seconds.
+An enterprise-grade multimodal pipeline that ingests raw brand assets and autonomously synthesizes high-fidelity ad campaigns in a min .
 
-1. The Problem (Real World Scenario)
+1. The Problem
 
 Context: In the AdTech ecosystem, "Creative Fatigue" is the #1 killer of campaign performance. Marketing teams spend 80% of their time manually resizing images and tweaking copy for A/B tests, leaving little room for strategy.
 
@@ -30,7 +30,7 @@ I architected this as a Multimodal RAG (Retrieval-Augmented Generation) system, 
 
 System Architecture:
 
-Visual Ingestion (The Eye):
+Visual Ingestion :
 
 Instead of relying on user text input, I passed the uploaded image stream directly to Google Gemini 2.0 Flash Vision.
 
@@ -83,10 +83,6 @@ Solution: I implemented a Robust Sanitization Layer. The service layer automatic
 6. Visual Proof
 
 (added in screenhots folder, Please see there )
-
-Input Interface
-
-Generated Campaign Gallery
 
 
 7. How to Run
