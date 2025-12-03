@@ -14,10 +14,10 @@ load_dotenv()
 class CreativeEngine:
     def __init__(self):
         self.api_key = os.getenv("GOOGLE_API_KEY")
-        self.model_name = "gemini-2.5-flash" 
+        self.model_name = "gemini-1.5-flash"
         self.model = None
         self.library_path = "asset_library"
-        self.is_mock = False  # <--- NEW DIAGNOSTIC FLAG
+        self.is_mock = False
         
         if not os.path.exists(self.library_path):
             os.makedirs(self.library_path)
@@ -27,57 +27,41 @@ class CreativeEngine:
                 genai.configure(api_key=self.api_key)
                 self.model = genai.GenerativeModel(self.model_name)
             except Exception as e:
-                print(f" AUTH ERROR: {e}")
+                print(f"Auth Error: {e}")
                 self.is_mock = True
         else:
-            print("NO API KEY FOUND")
             self.is_mock = True
 
     def _generate_with_retry(self, inputs, retries=3):
-        """Attempts generation with backoff. Prints errors to terminal."""
         for attempt in range(retries):
             try:
                 return self.model.generate_content(inputs)
             except Exception as e:
-                print(f"API ATTEMPT {attempt+1} FAILED: {e}")
-                time.sleep(2) 
-        
-        print(" ALL RETRIES FAILED. SWITCHING TO MOCK DATA.")
+                print(f"API Error: {e}")
+                time.sleep(2)
         self.is_mock = True
         return None
 
     def analyze_product_visuals(self, image: Image.Image):
         if self.is_mock or not self.model: return "Modern high-quality product"
-        
-        prompt = "Analyze this image. Describe the product's color palette, material textures, lighting style, and key design elements in 1 sentence."
+        prompt = "Analyze this image. Describe colors, materials, and vibe in 1 sentence."
         response = self._generate_with_retry([prompt, image])
-        
-        if response:
-            return response.text
-        return "Premium product with modern design aesthetics"
+        return response.text if response else "Premium product"
 
     def generate_campaigns(self, brand: str, visual_context: str, logo_present: bool = False):
         if self.is_mock or not self.model: return self._mock_data()
 
         prompt = f"""
-        Role: Senior Creative Director for {brand}.
-        Context: Product visuals are "{visual_context}".
-        Task: Create 4 distinct, high-fidelity ad creative variations.
-        
-        Themes:
-        1. Minimalist & Clean
-        2. Lifestyle & Usage
-        3. Luxury & Editorial
-        4. High Energy & Action
-
-        Return ONLY raw JSON (Array of Objects) with this structure:
+        Role: Creative Director for {brand}. Product Visuals: "{visual_context}".
+        Task: Create 4 ad variations (Themes: Minimalist, Lifestyle, Luxury, High Energy).
+        Return RAW JSON Array:
         [
             {{
                 "theme": "Theme Name",
-                "headline": "Punchy Headline (Max 7 words)",
-                "caption": "Engaging social copy",
-                "image_prompt": "Stable Diffusion prompt describing the scene. Include '{brand} logo' if logo_present.",
-                "hex_accent": "#HexCode"
+                "headline": "Headline (Max 7 words)",
+                "caption": "Social copy",
+                "image_prompt": "Stable Diffusion prompt. Include '{brand} logo' if logo_present.",
+                "hex_accent": "#00CC96"
             }}
         ]
         """
@@ -89,32 +73,31 @@ class CreativeEngine:
                 clean_json = response.text.replace("```json", "").replace("```", "").strip()
                 campaigns = json.loads(clean_json)
                 
-                # Image Synthesis
                 for i, camp in enumerate(campaigns):
                     branding = f"branded with {brand} logo" if logo_present else ""
-                    final_prompt = f"{camp['image_prompt']}, {branding}, {visual_context}, professional photography, 8k"
+                    final_prompt = f"{camp['image_prompt']}, {branding}, {visual_context}, 8k photography"
                     
                     seed = random.randint(100, 99999)
                     encoded = final_prompt.replace(" ", "%20")
                     camp['image_url'] = f"https://pollinations.ai/p/{encoded}?seed={seed}&width=1080&height=1080&nologo=true"
                     
+                    
                     self.save_to_library(camp['image_url'], f"{brand}_{camp['theme']}")
                     
                 return campaigns
-            except Exception as e:
-                print(f"JSON PARSING ERROR: {e}")
-                self.is_mock = True
+            except:
                 return self._mock_data()
-        
         return self._mock_data()
 
     def save_to_library(self, url, filename):
         try:
-            img_data = requests.get(url, timeout=60).content
-            safe_name = "".join([c for c in filename if c.isalnum() or c=='_'])
-            path = os.path.join(self.library_path, f"{safe_name}.jpg")
-            with open(path, "wb") as f:
-                f.write(img_data)
+            
+            img_data = requests.get(url, timeout=30).content
+            if len(img_data) > 1024:
+                safe_name = "".join([c for c in filename if c.isalnum() or c=='_'])
+                path = os.path.join(self.library_path, f"{safe_name}.jpg")
+                with open(path, "wb") as f:
+                    f.write(img_data)
         except Exception as e:
             print(f"Save failed: {e}")
 
@@ -132,14 +115,13 @@ class CreativeEngine:
                 fname = f"Var_{i+1}_{camp['theme'].split()[0]}.jpg"
                 manifest += f"[{camp['theme']}]\nHEADLINE: {camp['headline']}\nFILE: {fname}\n\n"
                 try:
-                    img_bytes = requests.get(camp['image_url'], timeout=60).content
+                    img_bytes = requests.get(camp['image_url'], timeout=30).content
                     zf.writestr(fname, img_bytes)
                 except: pass
             zf.writestr("campaign_manifest.txt", manifest)
         return zip_buffer.getvalue()
 
     def _mock_data(self):
-        """Fallback Data"""
         return [
             {"theme": "Neon Future", "headline": "Light Up The Night.", "caption": "Next gen tech.", "image_prompt": "neon cyberpunk product", "image_url": "https://pollinations.ai/p/neon?seed=1", "hex_accent": "#00CC96"},
             {"theme": "Pure Zen", "headline": "Simplicity Redefined.", "caption": "Find your balance.", "image_prompt": "minimalist white product", "image_url": "https://pollinations.ai/p/white?seed=2", "hex_accent": "#AAAAAA"},
